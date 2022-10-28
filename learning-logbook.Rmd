@@ -1,5 +1,5 @@
 ---
-title: "learning-logbook"
+title: "Learning logbook"
 author: "Adrian Fülle"
 date: "2022-10-13"
 
@@ -10,13 +10,553 @@ output:
     collapsed: false
     number_sections: false
     number_figures: true
+    df_print: paged
+    code_folding: hide
     theme: readable
     # css: layout/button.css
-
-
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{css, echo=FALSE}
+/* Move code folding buttons to the left */
+div.col-md-12 .pull-right {
+  float: left !important
+}
 ```
+
+```{=html}
+<style type="text/css">
+.main-container {
+  max-width: 100% !important;
+  margin: auto;
+  }
+.grey {
+  background-color: #b6b6b6;
+}
+body {
+  background-color: #ffd99d;
+  }
+<!-- pre, pre:not([class]) { -->
+<!--   background-color: white;  -->
+<!--   } -->
+</style>
+```
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE,warning = F)
+```
+
+
+# Tree phenology analysis with R {.unnumbered}
+
+*Visit the course book!*
+
+[![CourseBook](images/chillR_hexSticker.png "Visit the course book!"){.cover width="200"}](http://inresgb-lehre.iaas.uni-bonn.de/chillR_book/introduction.html) 
+
+
+
+***Learning content:***
+
+Using the [chillR package](https://cran.r-project.org/web/packages/chillR/index.html) for R, data on the timing of tree life cycle events will be related to temperature data and analyzed in a number of ways. Students will learn how to:
+
+-   Efficiently compute common chill and heat metrics
+-   Illustrate and evaluate temporal trends in thermal metrics
+-   Design functions for additional metrics
+-   Relate phenology data to temperature records using multivariate statistics
+-   Identify temperature response phases of temperate tree crops
+-   Generate past and future temperature scenarios using a weather generator
+-   Evaluate past and prospective future impacts of climate change on thermal metrics
+-   Participate in a phenology monitoring experiment under semi-controlled conditions
+-   Analyze a phenology dataset and compile a report about their findings
+-   Use git and github for version control and collaboration and R-Markdown for report writing 
+
+
+***Learning outcomes:***
+
+After a successful completion of the course, the students...
+
+-   will be able to apply R functions and develop code using version control (github).
+-   will be able to analyze phenology records and relate them to temperature data.
+-   will be able to evaluate climate change impacts on thermal metrics.
+-   will be able to compile a comprehensive and fully reproducible report on the agroclimatic history and prospects for a particular context, combining results from several analyses.
+-   will be familiar with phenology monitoring protocols and able to apply them.
+
+\ 
+
+```{r eval=FALSE, include=FALSE}
+Kapitel Vorlage
+
+# 
+
+[*Chapter*]()
+
+
+\ 
+
+```
+
+# Tree dormancy
+
+[*Chapter 3*](http://inresgb-lehre.iaas.uni-bonn.de/chillR_book/tree-dormancy.html)
+
+***Put yourself in the place of a breeder who wants to calculate the temperature requirements of a newly released cultivar. Which method will you use to calculate the chilling and forcing periods? Please justify your answer.***
+
+* experimental, if there really is no statistical data on the new cultivar.
+* He could search for similar cultivars and only make a small number of additional experiment to evaluate how accurate his forecasts will be.
+
+\ 
+
+***Which are the advantages (2) of the BBCH scale compared with earlies scales?***
+
+* traditional scales are not standardized (species specific)
+* traditional scales only cover development of flower buds - wheras BBCH scales have two digits covering micro and macro growth stages 
+
+\ 
+
+***Classify the following phenological stages of sweet cherry according to the BBCH scale:***
+
+![](images/pheno_stages.png "Phenological stages of Cherry")
+
+
+* First image:  BBCH stage 53
+* Second image: BBCH stage 60 - 65
+* Third image:  BBCH stage 85 - 89
+
+*Some extras*
+
+Quickly scraping [Wikipedia](https://en.wikipedia.org/wiki/BBCH-scale_(stone_fruit)) and creating a csv of the BBCH stages.
+Click the "Code" button to see more.
+
+```{r eval=FALSE}
+library(stringr)
+library(rvest)
+
+link <- "https://en.wikipedia.org/wiki/BBCH-scale_(stone_fruit)"
+
+page <- read_html(link)
+
+cherry_BBCH <-
+  page %>%
+  html_node(".wikitable") %>%
+  html_table()
+
+colnames(cherry_BBCH) <- cherry_BBCH[1,]
+cherry_BBCH <- cherry_BBCH[-1,]
+cherry_BBCH[2] <- lapply(cherry_BBCH[2], str_remove, pattern = "Principal.*")
+
+write.csv(cherry_BBCH, "data/cherry_BBCH.csv",row.names = FALSE)
+
+
+
+library(kableExtra)
+
+cherry_BBCH <- read.csv("data/cherry_BBCH.csv", )
+
+kable(cherry_BBCH, format = "html", table.attr = "class=\"grey\"") %>%
+  kable_styling(bootstrap_options = c("striped"),
+                full_width = T,
+                # full_width = F,
+                # font_size = 12,
+                # position = "left"
+                ) %>% 
+    scroll_box(height = "300px")
+
+```
+
+```{r, echo=FALSE}
+library(kableExtra)
+
+cherry_BBCH <- read.csv("data/cherry_BBCH.csv", )
+
+kable(cherry_BBCH, format = "html", table.attr = "class=\"grey\"") %>%
+  kable_styling(bootstrap_options = c("striped"),
+                full_width = T,
+                # full_width = F,
+                # font_size = 12,
+                # position = "left"
+                ) %>% 
+    scroll_box(height = "300px")
+
+```
+
+\ 
+
+# Climate change
+
+[*Chapter 4*](http://inresgb-lehre.iaas.uni-bonn.de/chillR_book/climate-change-and-impact-projection.html)
+
+***List the main drivers of climate change at the decade to century scale, and briefly explain the mechanism through which the currently most important driver affects our climate.***
+
+*Sun:*
+
+* warms earth through solar radiation (varies a little because of sunspots)
+* explains only a small fraction of the recent (drastic) changes in our climate
+
+*Aerosols:*
+
+* liquid - solid - mixed
+* solar radiation gets reflected from the particals 
+* generally cooling effect 
+
+*Clouds:*
+
+* both cooling an heating
+* depending on the type of clouds (debate if there will be a positive or negative feedback loop through warming and production of more clouds)
+
+*Ozone:*
+
+* there is good (high altitude) and
+* bad ozone (low altitude)
+* generally greenhouse gas (heating effect) but
+* ozone layer filters UV-B (good)
+* "ozone hole" through propellants in aerosol spray cans, refrigerants etc.
+* ozone layer has been recovering
+
+*Surface albedo:*
+
+* capability of land to reflect
+* high albedo is good
+* deforestation, drying has "cooling effect" (in terms of albedo)
+* melting ice is one of the worst options (ice reflects, water absorbs heat)
+
+*Greenhouse gases*
+
+* solar radiation that gets to the earth gets trapped
+* shortwave radiation (high energy) passes through -> reaches earth -> loses energy -> longwave radiation (lower energy) gets reflected and absorbed by the gases (trapped)
+
+\ 
+
+***Explain briefly what is special about temperature dynamics of the recent decades, and why we have good reasons to be concerned.***
+
+*from video 1*
+* atmospheric CO2 concentrations are higher than ever before (certainly since humanity exists)
+* never been rising so fast
+* correlating higher global temperatures
+* (figure from risk and sustainability temperature in the last 3 million years)
+
+*video 2*
+* 10 warmest years since 1880 all recent
+* forest fires in Siberia
+* permafrost regions could/will melt (albedo down) important CO2 storage
+* 5°C less than today (average worldwide) will get us back to the ice age (13 M years ago) (DRASTIC!!)
+* unpredictable weather/seasons
+* human greenhouse gases are mostly to blame
+
+\ 
+
+***What does the abbreviation 'RCP' stand for, how are RCPs defined, and what is their role in projecting future climates?***
+
+*GCM - Gerneral Circulation Models / Global Climate Model (OLD)*
+
+* 3D gridded earth 
+* all major drivers and some smaller feedbacks
+* supercomputer
+* really coarse
+* not useful for local studies
+* dynamical upscaling to Regional Climate Models (RCMs)
+* higher resolution / better representation of specific area, but
+* not applicable for bigger areas
+* statistical upscaling: weather generators or delta change (can be done to RCMs and GCMs; statistical correction of small areas; caution while interpreting)
+
+*RCPs - Representative Concentration Pathways*
+
+* most commonly used climate models / greenhouse forcing scenarios today
+* the higher the number behind (i.e. RCP 2.4, RCP 8.5) the "worse" (warmer) the prediction
+* the number represents the expected additional radiation forcing [W * m-²] in year 2100
+
+
+* RCPs are fed into GCMs -> these are upscaled to RCMs -> (statistically upscaled further) -> Temperature, Precipitation, (CO2) projections -> Impact projections
+
+* there are a lot of models, ways of upscaling 
+* ensemble of multiple RCPs should be used (rarely archived, especially in agriculture)
+* imense computing power needed
+* often not done by agriculturists (lacking)
+
+\ 
+
+***Briefly describe the 4 climate impact projection methods described in the fourth video.***
+
+*Statistical models*
+
+* in general - finding correlations between climate changes and i.e. yield 
+
+*Species distribution model / ecological nieche model*
+
+* also statistical
+* correlation between climatic parameters and presence/absence for data for species/systems
+* find relationships and predict based on them
+
+* limited: we might look at the wrong relationship of datatypes
+* major assumption: species is in equilibrium at the moment
+* agriculture: crops are grown where planted (didn't develop in climate region naturally)
+* distributions depend on many non-climatic factors
+* a lot of uncertainties (should always be stated)
+
+*Process-based models*
+
+* tries to capture best scientific knowledge we have of a system
+* not equal knowledge about every input in the model
+* often a lot is missing, extremely complex systems, predictions are often far off
+* complexity vs precision
+* uncertainties often times not captured
+
+*Climate analogue models*
+
+* not widely used
+* looking for already existing climates in other areas that could be similar to future climates (glimpse at the future)
+* data often scarce or of poor quality
+* ONLY climate considered (non climate factors stay the same)
+* ("egoistical" colder climates could adapt looking at already hot climates, not a model for already hot climates)
+
+\ 
+
+# Past chill projections
+
+[*Chapter 5*](http://inresgb-lehre.iaas.uni-bonn.de/chillR_book/winter-chill-projections.html)
+
+***Sketch out three data access and processing challenges that had to be overcome in order to produce chill projections with state-of-the-art methodology.***
+
+*Oman:*
+* (The Chilling Hours Model can't be trusted, especially for warmer regions.)
+* To do a climate change analysis you need data over a long period of time, but the temperature sensors were only set up "recently". The lacking data problem was overcome by using a weather generator. This tool generates plausible weather data based on observed data points.
+
+*California*
+* There are a lot of chill models! Based on literature and [another study](https://www.sciencedirect.com/science/article/abs/pii/S0168192309001580), the dynamic model is deemed as most reliable for now. But you have to dive into programming a "bit", since it was based on old, overly complicated excel sheet calculations. This is probably the origin of this course.
+
+*Future Climate*
+* There is a lot of data on how the climate in the future *might* look like, but there is/was still no uniform data structuring. Many people have developed GCMs (general circulation / global climate model), which would still need upscaling, if one wanted to look at regional data. The general consensus is, to always look at multiple GCMs at a time (~20), since we don't know which, if any, could be correct. This uses a lot of storage, computing power and time since, especially in the past (Excel, JSP...), there was no standardized input/output for all the different programs.
+
+\ 
+
+***Outline, in your understanding, the basic steps that are necessary to make such projections.***
+
+* Research the current state of science first
+* Have a rich pool of data
+* Gather data from multiple sources (empirical, expert, local, sensors)
+* Deal with imperfect/missing data (i.e. interpolating)
+* Do not hide uncertainties
+* Get distributions as results, not just one outcome possible
+* Give constructive feedback how to improve in the future ("what would be needed to build better models in the future?")
+
+\ 
+
+# Basic chill modeling
+
+[*Chapter 6*](http://inresgb-lehre.iaas.uni-bonn.de/chillR_book/manual-chill-analysis.html)
+
+
+***Write a basic function that calculates warm hours (>25°C)***
+
+```{r}
+# creating a basic function to filter (columns)
+CH_flex <- function(Temp, lower, upper)
+{
+  (Temp >= lower) & (Temp <= upper)
+}
+```
+
+\ 
+
+***Apply this function to the Winters_hours_gaps dataset***
+
+```{r}
+library(chillR)
+
+hourtemps <- Winters_hours_gaps
+hourtemps[, "CH_25_plus"] <- CH_flex(hourtemps$Temp,
+                                     lower = 1,
+                                     upper = 20)
+summary(hourtemps[, "CH_25_plus"])
+```
+
+\ 
+
+***Extend this function, so that it can take start and end dates as inputs and sums up warm hours between these dates***
+
+*Date to date-components function:*
+
+```{r}
+date_components <- function(date_raw) {
+  date <- gsub("\\D", "", date_raw)
+  y <- substr(date, 0, 4)
+  m <- substr(date, 5, 6)
+  d <- substr(date, 7, 8)
+  if (nchar(date) < 8) {
+    stop("Date input too short!\nAllowed format: YYYY\\MM\\DD with any seperator.\n", call. = F)
+  }
+  if (!is.na(as.Date(as.character(date), format = '%y%m%d')) |
+      !is.na(as.Date(as.character(date), format = '%Y%m%d'))) {
+    return(list(
+      Year = as.numeric(y),
+      Month = as.numeric(m),
+      Day = as.numeric(d)
+    ))
+  } else{
+    return(cat(
+      paste0("Something went wrong: Check your Date input!\n",
+             "Detected date was: ", y,".",m,".",d)
+      ))
+  }
+}
+ 
+# date <- "1956,03.40"
+# date_components(date)
+# date <- "56.03.30"
+# date_components(date)
+# date <- "1956#!,03-#!30+#!$"
+# date_components(date)
+```
+
+*Extended chill function - date-components function integrated*
+
+```{r}
+CH_flex <-
+  function(data,
+           Start_Date, End_Date,
+           lower, upper) {
+    
+    data[, "CH_tmp"] <-
+      (data$Temp >= lower) & (data$Temp <= upper)
+    
+    start <- date_components(Start_Date)
+    end   <- date_components(End_Date)
+    
+    Start_row <- 
+      which(data$Year == start$Year &
+              data$Month == start$Month &
+              data$Day == start$Day &
+              data$Hour == 12)
+    
+    End_row <- 
+      which(data$Year == end$Year &
+              data$Month == end$Month &
+              data$Day == end$Day &
+              data$Hour == 12
+      )
+    
+    return(list(Start_row,
+                End_row,
+                summary(data$CH_tmp[Start_row:End_row])))
+  }
+```
+
+*Testing new function*
+
+```{r}
+CH_flex(
+  data = hourtemps,
+  Start_Date = "2008_.-:?§()=$%&//0303",
+  End_Date = "20081031",
+  lower = 1,
+  upper = 5
+)
+
+```
+
+
+\ 
+
+# Chill models
+
+[*Chapter 7*](http://inresgb-lehre.iaas.uni-bonn.de/chillR_book/chill-models.html)
+
+
+***Run the chilling() function on the Winters_hours_gap dataset***
+
+```{r}
+normal_chill <-
+  chilling(
+  make_JDay(Winters_hours_gaps),
+  Start_JDay = 63,
+  End_JDay = 105
+  )
+
+kable(normal_chill, format = "html", table.attr = "class=\"grey\"") %>%
+  kable_styling("striped", position = "left")
+```
+
+
+***Create your own temperature-weighting chill model using the step_model() function***
+
+```{r}
+# step_model <- 
+#   function (HourTemp, df = data.frame(lower = c(-1000, 1.4, 2.4, 
+#   9.1, 12.4, 15.9, 18), upper = c(1.4, 2.4, 9.1, 12.4, 15.9, 
+#   18, 1000), weight = c(0, 0.5, 1, 0.5, 0, -0.5, -1)), summ = TRUE) 
+# {
+#   lower <- df$lower
+#   upper <- df$upper
+#   weight <- df$weight
+#   if (summ == TRUE) 
+#     return(cumsum(sapply(HourTemp, function(x) weight[which(x > 
+#       lower & x <= upper)])))
+#   else return(sapply(HourTemp, function(x) weight[which(x > 
+#     lower & x <= upper)]))
+# }
+
+own_step_model <- 
+  function (HourTemp,
+            df = data.frame(
+              lower  = c(-1000,  -4, 0,   2,    5, 10, 18),
+              upper  = c(   -4,   0, 2,   5,   10, 18, 1000),
+              weight = c(    0, 0.5, 1, 0.5, -0.5,  0, 0)
+            ),
+            summ = TRUE) {
+    
+    lower  <- df$lower
+    upper  <- df$upper
+    weight <- df$weight
+    
+    if (summ == TRUE)
+      return(cumsum(sapply(HourTemp, function(x)
+        weight[which(x > lower & x <= upper)])))
+    else
+      return(sapply(HourTemp, function(x)
+        weight[which(x > lower & x <= upper)]))
+  }
+
+```
+
+
+***Run this model on the Winters_hours_gaps dataset using the tempResponse() function.***
+
+```{r}
+output <-
+  tempResponse(
+    make_JDay(Winters_hours_gaps),
+    Start_JDay = 90,
+    End_JDay = 100,
+    models = list(Chill_Portions = Dynamic_Model, GDH = GDH, step_model = step_model, own_model = own_step_model)
+  )
+
+kable(output, format = "html", table.attr = "class=\"grey\"") %>%
+  kable_styling("striped", position = "left")
+```
+
+
+\ 
+
+# Hourly temperatures
+
+[*Chapter 8*](http://inresgb-lehre.iaas.uni-bonn.de/chillR_book/making-hourly-temperatures.html)
+
+***Choose a location of interest, find out its latitude and produce plots of daily sunrise, sunset and daylength***
+
+***Produce an hourly dataset, based on idealized daily curves, for the KA_weather dataset (included in chillR)***
+
+***Produce empirical temperature curve parameters for the Winters_hours_gaps dataset, and use them to predict hourly values from daily temperatures (this is very similar to the example above, but please make sure you understand what’s going on)***
+
+\ 
+
+# Getting temperature data
+
+[*Chapter 9*](http://inresgb-lehre.iaas.uni-bonn.de/chillR_book/get_temp_data.html)
+
+***Choose a location of interest and find the 25 closest weather stations using the handle_gsod function***
+
+***Download weather data for the most promising station on the list***
+
+***Convert the weather data into chillR format***
+
+\ 
 
