@@ -524,8 +524,8 @@ own_step_model <-
 output <-
   tempResponse(
     make_JDay(Winters_hours_gaps),
-    Start_JDay = 90,
-    End_JDay = 100,
+    Start_JDay = 63,
+    End_JDay = 105,
     models = list(Chill_Portions = Dynamic_Model, GDH = GDH, step_model = step_model, own_model = own_step_model)
   )
 
