@@ -33,7 +33,7 @@ div.col-md-12 .pull-right {
   background-color: #b6b6b6;
 }
 body {
-  background-color: #ffd99d;
+  background-color: #fff4bf;
   }
 <!-- pre, pre:not([class]) { -->
 <!--   background-color: white;  -->
